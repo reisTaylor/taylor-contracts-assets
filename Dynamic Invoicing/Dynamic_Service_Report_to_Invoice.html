@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>T&T Service Report + Invoice — Taylor & Taylor Contract Services LLC</title>
+<style>
+  :root{
+    --bg:#ffffff; --fg:#111827; --muted:#6b7280; --line:#e5e7eb;
+    --acc:#0f766e; --acc2:#155e75; --warn:#b45309; --ok:#065f46;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  header{border-bottom:1px solid var(--line);padding:14px 16px;position:sticky;top:0;background:#fff;z-index:10}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+  h1{margin:0;font-size:18px}
+  .sub{margin:2px 0 0;color:var(--muted);font-size:12px}
+  .grid{display:grid;gap:12px}
+  @media(min-width:960px){.grid-2{grid-template-columns:1.2fr .8fr}.grid-3{grid-template-columns:repeat(3,1fr)}}
+  .card{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  .card h2{margin:0;padding:10px 12px;background:linear-gradient(#f9fafb,#f3f4f6);border-bottom:1px solid var(--line);font-size:14px;color:#0b3b46}
+  .section{padding:12px}
+  label{display:block;font-weight:600;font-size:12px;margin:8px 0 4px}
+  input[type="text"], input[type="number"], input[type="date"], select, textarea{
+    width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;font:inherit
+  }
+  textarea{min-height:72px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .row > *{flex:1}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;color:#fff;background:var(--acc2)}
+  .small{color:var(--muted);font-size:12px}
+  .muted{color:var(--muted)}
+  .btns{display:flex;gap:8px;flex-wrap:wrap}
+  button{appearance:none;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font:inherit;cursor:pointer}
+  button.primary{background:var(--acc2);border-color:var(--acc2);color:#fff}
+  button.ghost{background:#fff}
+  button.warn{background:#fff7ed;border-color:#fed7aa}
+  .item{border:1px solid var(--line);border-radius:12px;padding:10px;margin:10px 0}
+  .item-head{display:flex;gap:10px;align-items:center;justify-content:space-between}
+  .qty{width:90px}
+  .money{text-align:right}
+  table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed}
+  th,td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+  thead th{background:#f9fafb}
+  tfoot td{font-weight:700}
+  .right{text-align:right}
+  .photos{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .photos img{width:84px;height:84px;object-fit:cover;border:1px solid var(--line);border-radius:8px}
+  .hl{background:#ecfeff;border:1px dashed #67e8f9;padding:8px;border-radius:8px}
+  .note{font-size:12px;color:var(--muted)}
+  .tabs{display:flex;gap:8px;margin:8px 0}
+  .tabs button{padding:6px 10px;border-radius:8px;border:1px solid var(--line)}
+  .tabs button.active{background:#e0f2fe;border-color:#93c5fd}
+  .printable{background:#fff}
+
+  /* PRINT: hide inputs, show both outputs, put invoice on new page */
+  @media print{
+    header,.controls,.tabs{display:none!important}
+    /* Hide the entire left input column */
+    main.wrap.grid.grid-2 > .grid:first-of-type{display:none!important}
+
+    body{background:#fff}
+    .card{border:none}
+    .printable{page-break-inside:avoid}
+
+    /* Always show both outputs (Service Report + Invoice) when printing */
+    #outReport,#outInvoice{display:block !important}
+    /* Start Invoice on a new page for clarity */
+    #outInvoice{page-break-before:always}
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>T&T Service Report + Invoice</h1>
+      <p class="sub">Taylor & Taylor Contract Services LLC · T&T Guaranteed</p>
+    </div>
+  </header>
+
+  <main class="wrap grid grid-2" style="margin:12px auto">
+    <!-- LEFT: INPUTS -->
+    <div class="grid">
+      <div class="card">
+        <h2>Job & Client</h2>
+        <div class="section">
+          <div class="row">
+            <div>
+              <label>Property</label>
+              <input id="propName" type="text" placeholder="e.g., Marcola Apartments" />
+            </div>
+            <div>
+              <label>Unit</label>
+              <input id="unit" type="text" placeholder="e.g., Creek 1×1 · #203" />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Unit Type</label>
+              <select id="unitType"></select>
+              <div class="small">Sets default price bands for Marcola types; you can override any rate.</div>
+            </div>
+            <div>
+              <label>Cleanable Sq Ft (for Floors)</label>
+              <input id="sqft" type="number" placeholder="e.g., 728" />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Work Order #</label>
+              <input id="wo" type="text" />
+            </div>
+            <div>
+              <label>Date</label>
+              <input id="date" type="date" />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>PM Company / Contact</label>
+              <input id="pm" type="text" placeholder="Name · email@pm.com" />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Your Hourly Benchmark (optional)</label>
+              <input id="hourly" type="number" placeholder="e.g., 50" />
+              <div class="small">Used for notes; price still itemized by bands.</div>
+            </div>
+            <div>
+              <label>Tax % (optional)</label>
+              <input id="tax" type="number" placeholder="e.g., 0" />
+            </div>
+          </div>
+          <div class="btns controls">
+            <button class="ghost" onclick="saveProfile()">Save Defaults</button>
+            <button class="ghost" onclick="loadProfile()">Load Defaults</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Tasks (ATWO → Select & Set Condition)</h2>
+        <div class="section" id="taskList"></div>
+      </div>
+
+      <div class="card">
+        <h2>Notes</h2>
+        <div class="section">
+          <label>Internal Notes (not shown to tenant)</label>
+          <textarea id="notes" placeholder="Anything you want for your records."></textarea>
+          <label>Invoice Footer / Terms</label>
+          <textarea id="terms" placeholder="Charges reflect cleaning reasonably necessary to return the unit to a clean condition consistent with turnover standards and not ordinary wear. Condition levels per attached T&T Variability Guide. Rates align to property pricing bands where applicable."></textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Actions</h2>
+        <div class="section btns controls">
+          <button class="primary" onclick="buildOutputs()">Build Service Report & Invoice</button>
+          <button onclick="window.print()">Print / Save PDF</button>
+          <button class="warn" onclick="clearAll()">Clear Form</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: OUTPUTS -->
+    <div class="grid">
+      <div class="card printable">
+        <h2>Outputs</h2>
+        <div class="section">
+          <div class="tabs">
+            <button id="tabReport" class="active" onclick="showTab('report')">Service Report</button>
+            <button id="tabInvoice" onclick="showTab('invoice')">Invoice</button>
+          </div>
+          <div id="outReport"></div>
+          <div id="outInvoice" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+<script>
+// ---------- DATA MODEL ----------
+const PRICE_BANDS = {
+  "Agate — Studio": {
+    bands: {
+      "Entrance / Porch": [8,15],
+      "Windows (each)": [10,10],
+      "Refrigerator & Freezer": [25,70],
+      "Oven / Range / Hood": [20,110],
+      "Microwave & Dishwasher (combined)": [10,30],
+      "Cabinets / Countertops / Sink (kitchen)": [25,35],
+      "Bathroom – Toilet (each)": [10,25],
+      "Washer / Dryer": [15,15],
+      "Tub / Shower (each fixture)": [25,80],
+      "Vanity / Sink / Faucet (bath)": [10,20],
+      "Wiping & Dusting — Whole Unit": [15,30],
+      "Floors — Whole Unit": [12,30],
+      "Patio / Balcony (incl. storage)": [10,30]
+    }
+  },
+  "Creek — 1×1": {
+    bands: {
+      "Entrance / Porch": [8,15],
+      "Windows (each)": [10,10],
+      "Refrigerator & Freezer": [25,70],
+      "Oven / Range / Hood": [20,110],
+      "Microwave & Dishwasher (combined)": [10,30],
+      "Cabinets / Countertops / Sink (kitchen)": [25,40],
+      "Bathroom – Toilet (each)": [10,25],
+      "Washer / Dryer": [15,20],
+      "Tub / Shower (each fixture)": [25,80],
+      "Vanity / Sink / Faucet (bath)": [10,20],
+      "Wiping & Dusting — Whole Unit": [20,35],
+      "Floors — Whole Unit": [18,35],
+      "Patio / Balcony (incl. door & storage)": [12,30]
+    }
+  },
+  "Stream — 2×2 Corner": {
+    bands: {
+      "Entrance / Porch": [8,15],
+      "Windows (each)": [10,10],
+      "Refrigerator & Freezer": [25,75],
+      "Oven / Range / Hood": [20,110],
+      "Microwave & Dishwasher (combined)": [10,30],
+      "Cabinets / Countertops / Sink (kitchen)": [30,45],
+      "Bathroom – Toilet (each)": [10,25],
+      "Washer / Dryer": [18,25],
+      "Tub / Shower (each fixture)": [25,80],
+      "Vanity / Sink / Faucet (bath)": [10,20],
+      "Wiping & Dusting — Whole Unit": [30,55],
+      "Floors — Whole Unit": [28,50],
+      "Patio / Balcony (incl. door & storage)": [15,30]
+    }
+  },
+  "Falls — 2×2 Large": {
+    bands: {
+      "Entrance / Porch": [8,15],
+      "Windows (each)": [10,10],
+      "Refrigerator & Freezer": [25,75],
+      "Oven / Range / Hood": [20,110],
+      "Microwave & Dishwasher (combined)": [10,30],
+      "Cabinets / Countertops / Sink (kitchen)": [30,45],
+      "Bathroom – Toilet (each)": [10,25],
+      "Washer / Dryer": [18,25],
+      "Tub / Shower (each fixture)": [25,80],
+      "Vanity / Sink / Faucet (bath)": [10,20],
+      "Wiping & Dusting — Whole Unit": [35,60],
+      "Floors — Whole Unit": [28,50],
+      "Patio / Balcony (incl. door & storage)": [15,30]
+    }
+  },
+  "River — 3×2": {
+    bands: {
+      "Entrance / Porch": [8,15],
+      "Windows (each)": [10,10],
+      "Refrigerator & Freezer": [25,80],
+      "Oven / Range / Hood": [20,110],
+      "Microwave & Dishwasher (combined)": [10,30],
+      "Cabinets / Countertops / Sink (kitchen)": [35,50],
+      "Bathroom – Toilet (each)": [10,25],
+      "Washer / Dryer": [18,25],
+      "Tub / Shower (each fixture)": [25,80],
+      "Vanity / Sink / Faucet (bath)": [10,20],
+      "Wiping & Dusting — Whole Unit": [40,65],
+      "Floors — Whole Unit": [30,52],
+      "Patio / Balcony (incl. door & storage)": [15,30]
+    }
+  }
+};
+
+// Condition → numeric mapping within a price band.
+const CONDITION_INDEX = { "Base":0, "Moderate":0.5, "Heavy":1, "Severe":1 };
+
+// Variability cues (short, for report wording).
+const CUE = {
+  "Oven / Range / Hood": {
+    Base: "Light grease film; crumbs; clear glass; easy racks.",
+    Moderate: "Grease on walls; carbon patches; greasy hood baffle.",
+    Heavy: "Thick carbon; smoke stains; coated drip pans; multi-dwell.",
+    Severe: "Char layer/odor; extensive chemical/steam cycles."
+  },
+  "Refrigerator & Freezer": {
+    Base: "Light crumbs/drips; no odor; easy gaskets.",
+    Moderate: "Sticky shelves; spill stains; freezer frost.",
+    Heavy: "Dried spills; mold spots on gaskets; faint odor.",
+    Severe: "Pervasive odor; extended soak/deodorizer protocol."
+  },
+  "Microwave & Dishwasher (combined)": {
+    Base: "MW: light splatter. DW: interior wipe; clean filter.",
+    Moderate: "MW: hardened splatter. DW: filter clean; faint odor.",
+    Heavy: "MW: tar/grease. DW: filter restoration; biofilm/odor."
+  },
+  "Cabinets / Countertops / Sink (kitchen)": {
+    Base: "Crumbs/fingerprints; minor water spots.",
+    Moderate: "Sticky shelves; grease film on faces; dingy caulk.",
+    Heavy: "Grease on uppers; liner residues; deodorizer needed."
+  },
+  "Bathroom – Toilet (each)": {
+    Base: "Light ring; minor dust at base.",
+    Moderate: "Calcified ring; hinge grime; needs brush work.",
+    Heavy: "Dark mineral scale; heavy jet buildup; pumice/acid."
+  },
+  "Tub / Shower (each fixture)": {
+    Base: "Light soap film; track mostly clear.",
+    Moderate: "Soap scum; mineral spotting; hair in track corners.",
+    Heavy: "Hard-water scale; sludge in track; stained caulk/grout.",
+    Severe: "Widespread mildew; etched glass; acid/steam cycles."
+  },
+  "Vanity / Sink / Faucet (bath)": {
+    Base: "Light toothpaste film; standard detail.",
+    Enhanced: "Toothpaste crust; interior drawers wiped; polish."
+  },
+  "Wiping & Dusting — Whole Unit": {
+    Base: "General dust; minor fingerprints.",
+    Moderate: "Heavy dust on ledges; ceiling cobwebs; trim wipe.",
+    Heavy: "Pet hair bands at cove base; stickers/adhesives."
+  },
+  "Floors — Whole Unit": { Base: "Sweep/vac edges + mop; light paint flecks removed." },
+  "Entrance / Porch": { Base: "Light debris; typical dust at trim/touchpoints.", Enhanced: "Dirty touchpoints/trim; heavy cobwebs; gritty threshold." },
+  "Patio / Balcony (incl. door & storage)": { Base: "Sweep; wipe rail; door glass both sides.", Moderate: "More debris/dust; extra wipe-down.", Heavy: "Dense debris; algae/mildew spots; extended brushing." },
+  "Windows (each)": { Base: "Interior glass, frame & sill wipe; track wipe; screen frame." }
+};
+
+// Task library
+const TASKS = [
+  { key:"Entrance / Porch", qty:true, defaultQty:1, tiers:["Base","Enhanced"] },
+  { key:"Windows (each)", qty:true, defaultQty:2, tiers:["Base"], addons:[{key:"Track Corner Detail (+$5 ea)", price:5}] },
+  { key:"Refrigerator & Freezer", qty:true, defaultQty:1, tiers:["Base","Moderate","Heavy","Severe"] },
+  { key:"Oven / Range / Hood", qty:true, defaultQty:1, tiers:["Base","Moderate","Heavy","Severe"] },
+  { key:"Microwave & Dishwasher (combined)", qty:true, defaultQty:1, tiers:["Base","Moderate","Heavy"] },
+  { key:"Cabinets / Countertops / Sink (kitchen)", qty:true, defaultQty:1, tiers:["Base","Moderate","Heavy"] },
+  { key:"Bathroom – Toilet (each)", qty:true, defaultQty:1, tiers:["Base","Moderate","Heavy"] },
+  { key:"Tub / Shower (each fixture)", qty:true, defaultQty:1, tiers:["Base","Moderate","Heavy","Severe"] },
+  { key:"Vanity / Sink / Faucet (bath)", qty:true, defaultQty:1, tiers:["Base","Enhanced"] },
+  { key:"Washer / Dryer", qty:true, defaultQty:1, tiers:["Base","Enhanced"] },
+  { key:"Wiping & Dusting — Whole Unit", qty:false, tiers:["Base","Moderate","Heavy"] },
+  { key:"Floors — Whole Unit", qty:false, tiers:["Base"], sqft:true, ratePerSqft:0.04 },
+  { key:"Patio / Balcony (incl. door & storage)", qty:false, tiers:["Base","Moderate","Heavy"] }
+];
+
+// ---------- INIT ----------
+const unitSel = document.getElementById('unitType');
+const taskList = document.getElementById('taskList');
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Populate unit types
+  Object.keys(PRICE_BANDS).forEach(u=>{
+    const opt=document.createElement('option'); opt.value=u; opt.textContent=u; unitSel.appendChild(opt);
+  });
+  unitSel.value = 'Creek — 1×1';
+
+  // Render tasks
+  TASKS.forEach((t,i)=> addTaskUI(t,i));
+
+  // Default terms
+  document.getElementById('terms').value = 'Charges reflect cleaning reasonably necessary to return the unit to a clean condition consistent with turnover standards and not ordinary wear. Condition levels per attached T&T Variability Guide. Rates align to property pricing bands where applicable. Labor/time records available upon request.';
+
+  // Self-test (console only)
+  try{
+    const count = document.querySelectorAll('#taskList .item').length;
+    if(count !== TASKS.length){ console.warn(`[T&T] Expected ${TASKS.length} tasks, rendered ${count}`); }
+  }catch(e){ console.warn('[T&T] Self-test error:', e); }
+});
+
+// ---------- UI BUILDERS ----------
+function addTaskUI(task, idx){
+  const div = document.createElement('div');
+  div.className='item';
+  div.dataset.key = task.key;
+  const id = `task_${idx}`;
+  div.innerHTML = `
+    <div class="item-head">
+      <div style="font-weight:600">${task.key}</div>
+      <div>
+        <label class="small" style="font-weight:600;display:inline-block;margin-right:6px">Include</label>
+        <input type="checkbox" id="${id}_check" />
+      </div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      ${task.qty? `<div class="qty"><label>Qty</label><input type="number" id="${id}_qty" value="${task.defaultQty||1}" min="1" /></div>` : ''}
+      <div>
+        <label>Condition</label>
+        <select id="${id}_cond">${task.tiers.map(t=>`<option>${t}</option>`).join('')}</select>
+      </div>
+      <div>
+        <label>Unit Rate (auto)</label>
+        <input type="number" id="${id}_rate" placeholder="auto" />
+        <div class="small">Leave blank to auto from bands.</div>
+      </div>
+    </div>
+    ${task.sqft? `<div class="hl small">Floors use per‑sqft pricing by default (<b>$${task.ratePerSqft.toFixed(2)}/sqft</b>). Override rate to use a flat total instead.</div>`: ''}
+    ${task.addons? `<div class="row" style="margin-top:6px"><div><label>Add‑ons</label>${task.addons.map((a,j)=>`<label class="small" style="font-weight:500"><input type="checkbox" id="${id}_addon_${j}" /> ${a.key}</label>`).join('<br>')}</div></div>`:''}
+  `;
+
+  // Optional photo uploader (disabled for now to keep things lean)
+  taskList.appendChild(div);
+}
+
+// ---------- LOGIC ----------
+function pickRate(unitType, taskKey, condition){
+  const bands = PRICE_BANDS[unitType]?.bands?.[taskKey];
+  if(!bands) return null;
+  if(bands[0]===bands[1]) return bands[0];
+  const idx = CONDITION_INDEX[condition] ?? 0.5;
+  return Math.round( (bands[0] + (bands[1]-bands[0])*idx) );
+}
+
+function gatherSelections(){
+  const unitType = unitSel.value;
+  const sqft = parseFloat(document.getElementById('sqft').value||0);
+  const selections = [];
+  document.querySelectorAll('#taskList .item').forEach(div=>{
+    const key = div.dataset.key;
+    const checked = div.querySelector('input[type=checkbox]').checked;
+    if(!checked) return;
+    const qtyEl = div.querySelector('[id$=_qty]');
+    const qty = qtyEl? parseInt(qtyEl.value||1,10):1;
+    const cond = div.querySelector('[id$=_cond]').value;
+    const rateEl = div.querySelector('[id$=_rate]');
+    let rate = parseFloat(rateEl.value);
+    let auto = false;
+
+    if(isNaN(rate)){
+      if(key==='Floors — Whole Unit' && sqft>0){
+        rate = Math.round(0.04 * sqft); // per-sqft baseline
+        auto = true;
+      } else {
+        rate = pickRate(unitType, key, cond) ?? 0;
+        auto = true;
+      }
+    }
+
+    selections.push({ key, qty, cond, rate, auto, cues: CUE[key]?.[cond] || '' });
+  });
+  return selections;
+}
+
+function money(n){ return `$${Number(n||0).toFixed(2)}`; }
+
+function buildOutputs(){
+  const unitType = unitSel.value;
+  const prop = document.getElementById('propName').value;
+  const unit = document.getElementById('unit').value;
+  const wo = document.getElementById('wo').value;
+  const date = document.getElementById('date').value;
+  const pm = document.getElementById('pm').value;
+  const taxPct = parseFloat(document.getElementById('tax').value||0);
+
+  const sel = gatherSelections();
+  if(!sel.length){ alert('Select at least one task.'); return; }
+
+  const sub = sel.reduce((s,x)=> s + (x.rate * (x.qty||1)), 0);
+  const tax = sub * (taxPct/100);
+  const total = sub + tax;
+
+  // Service Report
+  const report = [];
+  report.push(`<div class="row" style="align-items:center;justify-content:space-between;margin-bottom:6px">
+    <div>
+      <div style="font-weight:700">Service Report — Customized ATWO</div>
+      <div class="small">${prop || ''} · ${unit || unitType} · WO ${wo||'-'} · ${date||''}</div>
+      <div class="small">PM: ${pm||''}</div>
+    </div>
+    <div class="pill">T&T Guaranteed</div>
+  </div>`);
+  report.push('<table><thead><tr><th style="width:44%">Task (ATWO mapping)</th><th>Qty</th><th>Condition</th><th>Scope / Observable Cues</th></tr></thead><tbody>');
+  sel.forEach(x=>{
+    report.push(`<tr><td>${x.key}</td><td class="right">${x.qty||1}</td><td>${x.cond}</td><td class="small">${x.cues||''}</td></tr>`);
+  });
+  report.push('</tbody></table>');
+  report.push(`<div class="note" style="margin-top:8px">Condition level definitions are available in the attached <b>T&T Variability Guide (Invoice Companion)</b>. Where applicable, price bands align to the selected unit type’s property pricing reference.</div>`);
+  document.getElementById('outReport').innerHTML = report.join('');
+
+  // Invoice
+  const inv = [];
+  inv.push(`<div class="row" style="align-items:center;justify-content:space-between;margin-bottom:6px">
+    <div>
+      <div style="font-weight:700">Invoice</div>
+      <div class="small">${prop || ''} · ${unit || unitType} · WO ${wo||'-'} · ${date||''}</div>
+      <div class="small">Bill to: ${pm||''}</div>
+    </div>
+    <div class="pill">Condition‑based Pricing</div>
+  </div>`);
+  inv.push('<table><thead><tr><th>Line Item</th><th class="right">Qty</th><th class="right">Unit Rate</th><th class="right">Line Total</th></tr></thead><tbody>');
+  sel.forEach(x=>{
+    const line = (x.rate * (x.qty||1));
+    inv.push(`<tr><td>${x.key} — <span class='small'>${x.cond}${x.auto?" (auto)":""}</span></td><td class="right">${x.qty||1}</td><td class="right">${money(x.rate)}</td><td class="right">${money(line)}</td></tr>`);
+  });
+  inv.push('</tbody><tfoot>');
+  inv.push(`<tr><td colspan="3" class="right">Subtotal</td><td class="right">${money(sub)}</td></tr>`);
+  inv.push(`<tr><td colspan="3" class="right">Tax (${isNaN(taxPct)?0:taxPct}%)</td><td class="right">${money(tax)}</td></tr>`);
+  inv.push(`<tr><td colspan="3" class="right">Total</td><td class="right">${money(total)}</td></tr>`);
+  inv.push('</tfoot></table>');
+  document.getElementById('outInvoice').innerHTML = inv.join('');
+
+  showTab('report');
+}
+
+// ---------- TABS ----------
+function showTab(which){
+  const rep = document.getElementById('outReport');
+  const inv = document.getElementById('outInvoice');
+  const tabRep = document.getElementById('tabReport');
+  const tabInv = document.getElementById('tabInvoice');
+  if(which==='invoice'){
+    rep.style.display='none'; inv.style.display='block';
+    tabRep.classList.remove('active'); tabInv.classList.add('active');
+  } else {
+    rep.style.display='block'; inv.style.display='none';
+    tabInv.classList.remove('active'); tabRep.classList.add('active');
+  }
+}
+
+// ---------- PERSISTENCE ----------
+function saveProfile(){
+  const data = { prop: propName.value, hourly: hourly.value, terms: terms.value };
+  localStorage.setItem('tt_profile', JSON.stringify(data));
+  alert('Defaults saved.');
+}
+function loadProfile(){
+  const raw = localStorage.getItem('tt_profile');
+  if(!raw) return alert('No defaults saved yet.');
+  try{
+    const p = JSON.parse(raw);
+    propName.value = p.prop||'';
+    hourly.value = p.hourly||'';
+    terms.value = p.terms||'';
+  }catch(e){ alert('Could not load defaults.'); }
+}
+function clearAll(){ if(confirm('Clear all inputs?')) location.reload(); }
+</script>
+</body>
+</html>
